@@ -31,20 +31,18 @@ class SkullsPlayer:
     def getName(self):
         return self.name
 
-    def playRed(self):
-        if self.red_total >= 1:
-            #add to board
-            return True
-        return False
+    def resetHand(self):
+        self.black_hand = self.black_total
+        self.red_hand = self.red_total
 
     def playCard(self, color):
         if color == "BLACK":
             if self.black_total >= 1:
-                #add to board
+                self.black_hand -= 1
                 return True
         else:
             if self.red_total >= 1:
-                #add to board
+                self.red_hand -= 1
                 return True
         return False
     

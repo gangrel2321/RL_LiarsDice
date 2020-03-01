@@ -1,5 +1,5 @@
 #add stuff from typing package
-import SkullsPlayer as sp
+from skullsPlayer import SkullsPlayer as sp
 from enum import Enum 
 
 class GamePhase(Enum):

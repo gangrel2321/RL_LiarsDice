@@ -1,4 +1,5 @@
-import SkullsGame as sg
+from skullsGame import SkullsGame
+from skullsPlayer import SkullsPlayer
 from os import system, name 
 from time import sleep 
   
@@ -22,7 +23,7 @@ if __name__ == "__main__":
     print("Enter the player names (Separated by ENTER):")
     for i in range(numPlayers):
         playersList.append(input())
-    curGame = sg(playersList)
+    curGame = SkullsGame(playersList)
     roundCount = 0
     while True:
         roundCount += 1
@@ -31,38 +32,41 @@ if __name__ == "__main__":
         topPlayer = -1
         for i in range(len(playersList)):
             curPlay = curGame.players[i]
-            print("Current Player: %s\n" % curPlay )
+            print("Current Player: %s\n" % curPlay.getName() )
             print("[Current Hand - %s]\n" % str( curPlay.getHand() ) )
             if curGame.getPhase() == "PLACING": #placing cards phase
-                decision = input("Would you like to start betting? (y/n): ").toUpper()
+                if roundCount > 1:
+                    decision = input("Would you like to start betting? (y/n): ").upper()
+                else: decision = "N"
                 while ((decision != "N") and (decision != "Y")):
-                    decision = input("ERROR: Enter \"y\" or \"n\": ").toUpper()
+                    decision = input("ERROR: Enter \"y\" or \"n\": ").upper()
                 if decision == "N":
-                    card = input("Play a card (RED, BLACK): ").toUpper()
+                    card = input("Play a card (RED, BLACK): ").upper()
                     while ((card != "RED") and (card != "BLACK")):
-                        card = input("ERROR: Enter \"RED\" or \"BLACK\": ").toUpper()
+                        card = input("ERROR: Enter \"RED\" or \"BLACK\": ").upper()
                     if not curPlay.playCard(card):
                         print("ERROR: You do not have enough \"%s\"." % card)
                         card = cardColor[not cardColor[card]]
                     print("%s played %s." % (curPlay.getName(), card))
                 else:
                     print("[Played Cards - %s]\n" % str( curPlay.getTable() ))
-                    topBet = int(input("Enter Bet:"))
+                    topBet = int(input("Enter Bet: "))
                     topPlayer = i
-                    #betPhase()
+                    curGame.togglePhase() #switch to betting phase
+
             else: #betting phase
                 #betPhase()
                 print("[Played Cards - %s]\n" % str( curPlay.getTable() ))
                 print("Current Highest Bet:", topBet)
-                curBet = input("Enter Bet (-1 = pass):")
+                curBet = int(input("Enter Bet (-1 = pass): "))
                 if curBet > topBet:
                     topBet = curBet
                     topPlayer= i
                 
-            print("Clearing Screen For Next Player ...")
+            print("Clearing Screen For Next Player ...\n")
             sleep(1)
             clear()
-            sleep(1)
-        
-        print("Player with Highest Bet: %s" % curGame.players[topPlayer].getName())
-        print()
+            sleep(2)
+        if roundCount > 1:
+            print("Player with Highest Bet: %s" % curGame.players[topPlayer].getName())
+            print()
