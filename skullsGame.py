@@ -1,17 +1,25 @@
 #add stuff from typing package
-class SkullsPlayer:
+import SkullsPlayer as sp
+from enum import Enum 
+
+class GamePhase(Enum):
+    PLACING = False
+    BETTING = True
+
+class SkullsGame:
     """ Class Representing a Game of Skulls """
 
     """
-    Initialize Player
+    Initialize Game
     @param players list of players in the game
     @return None
     """
-    def __init__(self, ident, name):
-        self.ident = ident 
-        self.name = name
-        self.red = 3
-        self.black = 1
+    def __init__(self, players=None):
+        self.players = []
+        if isinstance(players,list):
+            for i in range(len(players)):
+                self.players.append(sp(i, players[i], self) )
+        self.phase = False
 
     """
     @return List of SkullsPlayer objects
@@ -25,6 +33,9 @@ class SkullsPlayer:
     """
     def getScore(self, player):
         return player.getScore()
+
+    def getPhase(self):
+        return GamePhase(self.phase).name
 
     """
     Adds a player object to list of players
@@ -40,5 +51,8 @@ class SkullsPlayer:
         self.players.remove(player)
         return None
     
+    def togglePhase(self):
+        self.phase = not self.phase
+
     def checkRules(self):
         pass
