@@ -24,12 +24,13 @@ if __name__ == "__main__":
     for i in range(numPlayers):
         playersList.append(input())
     curGame = SkullsGame(playersList)
+    gameOver = False
     roundCount = 0
     while True:
         roundCount += 1
         print("Round %d\n" % roundCount)
         topBet = 0
-        topPlayer = -1
+        topPlayer = None
         for i in range(len(playersList)):
             curPlay = curGame.players[i]
             print("Current Player: %s\n" % curPlay.getName() )
@@ -49,24 +50,45 @@ if __name__ == "__main__":
                         card = cardColor[not cardColor[card]]
                     print("%s played %s." % (curPlay.getName(), card))
                 else:
-                    print("[Played Cards - %s]\n" % str( curPlay.getTable() ))
+                    print("[Played Cards - %s]\n" % str( curPlay.getTableString() ))
                     topBet = int(input("Enter Bet: "))
-                    topPlayer = i
+                    topPlayer = curGame.players[i]
                     curGame.togglePhase() #switch to betting phase
 
             else: #betting phase
                 #betPhase()
-                print("[Played Cards - %s]\n" % str( curPlay.getTable() ))
+                print("[Played Cards - %s]\n" % str( curPlay.getTableString() ))
                 print("Current Highest Bet:", topBet)
-                curBet = int(input("Enter Bet (-1 = pass): "))
+                curBet = curPlay.bet()
                 if curBet > topBet:
                     topBet = curBet
-                    topPlayer= i
-                
+                    topPlayer= curGame.players[i]
+
+            if topBet >= curGame.getDownCards():
+                break    
             print("Clearing Screen For Next Player ...\n")
             sleep(1)
             clear()
             sleep(2)
-        if roundCount > 1:
-            print("Player with Highest Bet: %s" % curGame.players[topPlayer].getName())
+        if roundCount > 1 and topPlayer != None:
+            print("Player with Highest Bet: %s" % topPlayer.getName())
             print()
+    
+    #decision phase
+    print("Decision Phase:\nPlayer %s must choose %s cards." % (topPlayer.getName(), topBet))
+    cardsRemain = topBet
+    #choose from your own side
+    while cardsRemain > 0 and sum(topPlayer.getTableData()) > 0:
+        if topPlayer.getTable()[-1] == 'B':
+            print("Player %s loses." % topPlayer.getName())
+            gameOver = True
+            break
+        else:
+            topPlayer.popTable()
+            cardsRemain -= 1
+    while not gameOver:
+        if cardsRemain <= 0: 
+            print("Player %s wins!" % topPlayer.getName())
+            gameOver = True
+        print("Choose a player to take cards from:")
+        

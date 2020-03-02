@@ -37,6 +37,9 @@ class SkullsGame:
     def getPhase(self):
         return GamePhase(self.phase).name
 
+    def getDownCards(self):
+        return sum([sum(player.getTableData()) for player in self.players])
+            
     """
     Adds a player object to list of players
     """
