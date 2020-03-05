@@ -44,8 +44,8 @@ class SkullsPlayer:
         return self.name
 
     def popTable(self):
-        self.table.pop()
-        return self.table
+        top = self.table.pop()
+        return top
 
     def resetHand(self):
         self.black_hand = self.black_total

@@ -26,7 +26,8 @@ if __name__ == "__main__":
     curGame = SkullsGame(playersList)
     gameOver = False
     roundCount = 0
-    while True:
+    roundOver = False
+    while not roundOver:
         roundCount += 1
         print("Round %d\n" % roundCount)
         topBet = 0
@@ -65,6 +66,7 @@ if __name__ == "__main__":
 
             else: #betting phase
                 #betPhase()
+                roundOver = True
                 print("[Played Cards - %s]\n" % str( curPlay.getTableString() ))
                 print("Current Highest Bet:", topBet)
                 curBet = curPlay.bet()
@@ -122,6 +124,8 @@ if __name__ == "__main__":
         if chosenCard == 'B':
             print("%s draws Black." % topPlayer.getName() )
             print("%s loses." % topPlayer.getName())
+            gameOver = True
+            break
         else:
             print("%s draws Red." % topPlayer.getName() )
             if cardsRemain > 0:
