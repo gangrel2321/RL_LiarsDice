@@ -33,8 +33,16 @@ if __name__ == "__main__":
         topPlayer = None
         for i in range(len(playersList)):
             curPlay = curGame.players[i]
-            print("Current Player: %s\n" % curPlay.getName() )
-            print("[Current Hand - %s]\n" % str( curPlay.getHand() ) )
+            print("Current Player: %s" % curPlay.getName() )
+            print("[Current Hand - %s]" % str( curPlay.getHand() ) )
+            print("Cards down: ",end="")
+            data = ""
+            for j in range(len(playersList)):
+                data += str(curGame.players[j].getName())
+                data += " " + str(len(curGame.players[j].getTable())) + ", "
+            data = data[:-2]
+            print(data)
+            print()
             if curGame.getPhase() == "PLACING": #placing cards phase
                 if roundCount > 1:
                     decision = input("Would you like to start betting? (y/n): ").upper()
@@ -62,48 +70,60 @@ if __name__ == "__main__":
                 curBet = curPlay.bet()
                 if curBet > topBet:
                     topBet = curBet
+                    if topBet >= curGame.getDownCards(): topBet = curGame.getDownCards()
                     topPlayer= curGame.players[i]
-
-            if topBet >= curGame.getDownCards():
-                break    
+            if topBet == curGame.getDownCards():
+                break 
             print("Clearing Screen For Next Player ...\n")
             sleep(1)
             clear()
             sleep(2)
+        if topBet == curGame.getDownCards():
+                break 
         if roundCount > 1 and topPlayer != None:
             print("Player with Highest Bet: %s" % topPlayer.getName())
             print()
     
     #decision phase
-    print("Decision Phase:\nPlayer %s must choose %s cards." % (topPlayer.getName(), topBet))
+    print("Decision Phase:\n%s must choose %s cards." % (topPlayer.getName(), topBet))
     cardsRemain = topBet
+
     #choose from your own side
     while cardsRemain > 0 and sum(topPlayer.getTableData()) > 0:
-        if topPlayer.getTable()[-1] == 'B':
-            print("Player %s loses." % topPlayer.getName())
+        topCard = topPlayer.popTable()
+        if topCard == 'B':
+            print("%s draws their own Black." % topPlayer.getName() )
+            print("%s loses." % topPlayer.getName() )
             gameOver = True
             break
         else:
-            topPlayer.popTable()
+            print("%s draws their own Red." % topPlayer.getName() )
             cardsRemain -= 1
+
+    #choose from other players
     while not gameOver:
         if cardsRemain <= 0: 
-            print("Player %s wins!" % topPlayer.getName())
+            print("%s wins!" % topPlayer.getName())
             gameOver = True
+            break
         playersInList = curGame.getPlayers(cardsDown=True)
         for player in playersInList:
             print("%s has %d cards down." % (player.getName(), sum(player.getTableData())) )
-        chosenPlayer = input("Choose a player to take cards from:")
-        while not (chosenPlayer in playersInList):
+        print()
+        #print("TEST:",playersInList)
+        chosenPlayerName = input("Choose a player to take cards from: ")
+        while not any(chosenPlayerName.upper() == x.getName().upper() for x in playersInList):
             print("Error: Player not found.")
-            chosenPlayer = input("Choose a player to take cards from:")
+            chosenPlayerName = input("Choose a player to take cards from: ")
+        chosenPlayer = next((x for x in playersInList if x.getName() == chosenPlayerName), None)
+        assert(chosenPlayer != None)
         chosenCard = chosenPlayer.popTable()
         cardsRemain -= 1
         if chosenCard == 'B':
-            print("The card was Black.")
-            print("Player %s loses." % topPlayer.getName())
+            print("%s draws Black." % topPlayer.getName() )
+            print("%s loses." % topPlayer.getName())
         else:
-            print("The card was Red.")
+            print("%s draws Red." % topPlayer.getName() )
             if cardsRemain > 0:
-                print("Player %s must choose %d more cards" % (topPlayer.getName(), cardsRemain))
+                print("%s must choose %d more cards" % (topPlayer.getName(), cardsRemain))
 

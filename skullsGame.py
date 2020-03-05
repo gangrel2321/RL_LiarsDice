@@ -30,7 +30,7 @@ class SkullsGame:
             return self.players
         #players with cards on the table
         else: 
-            return filter(lambda x: len(x.getTable()) > 0, self.players)
+            return list(filter(lambda x: len(x.getTable()) > 0, self.players))
 
     """
     Returns current score of specified player
