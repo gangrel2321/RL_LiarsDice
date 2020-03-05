@@ -90,5 +90,20 @@ if __name__ == "__main__":
         if cardsRemain <= 0: 
             print("Player %s wins!" % topPlayer.getName())
             gameOver = True
-        print("Choose a player to take cards from:")
-        
+        playersInList = curGame.getPlayers(cardsDown=True)
+        for player in playersInList:
+            print("%s has %d cards down." % (player.getName(), sum(player.getTableData())) )
+        chosenPlayer = input("Choose a player to take cards from:")
+        while not (chosenPlayer in playersInList):
+            print("Error: Player not found.")
+            chosenPlayer = input("Choose a player to take cards from:")
+        chosenCard = chosenPlayer.popTable()
+        cardsRemain -= 1
+        if chosenCard == 'B':
+            print("The card was Black.")
+            print("Player %s loses." % topPlayer.getName())
+        else:
+            print("The card was Red.")
+            if cardsRemain > 0:
+                print("Player %s must choose %d more cards" % (topPlayer.getName(), cardsRemain))
+

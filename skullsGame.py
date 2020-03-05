@@ -24,9 +24,14 @@ class SkullsGame:
     """
     @return List of SkullsPlayer objects
     """
-    def getPlayers(self):
-        return self.players
-    
+    def getPlayers(self, cardsDown = False):
+        #all players
+        if cardsDown == False: 
+            return self.players
+        #players with cards on the table
+        else: 
+            return filter(lambda x: len(x.getTable()) > 0, self.players)
+
     """
     Returns current score of specified player
     @return player's score (0-2)
