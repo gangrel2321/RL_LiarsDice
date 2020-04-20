@@ -34,3 +34,8 @@ class GamePhase(enum.Enum):
         elif self == GamePhase.betting:
             return GamePhase.choice
         return None
+
+class Card(enum.Enum):
+    skull = 1
+    rose = 2
+    

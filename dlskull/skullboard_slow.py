@@ -2,6 +2,7 @@ import numpy as np
 import copy
 from dlskull.skulltypes import Player
 from dlskull.skulltypes import GamePhase
+from dlskull.skulltypes import Card
 
 __all__ = [
     'Board',
@@ -58,6 +59,7 @@ class Board():
         self.players_bet = set()
         self.phase = phase
         self._bets = {}
+        self.chosen_cards = 0
         self.top_bet = (None,-1)
 
     def place_card(self, player, card):
@@ -84,7 +86,13 @@ class Board():
         assert self._table.get_player_cards(dest_player) > 0
         assert start_player != dest_player
         card = self._table.remove(dest_player)
+        self.chosen_cards += 1
         return card
+
+    def all_cards_chosen(self):
+        assert self.phase = GamePhase.chooice
+        return self.chosen_cards == self.top_bet
+
 
     def has_card(self, player, card):
         return self._hands.has_card(player, card)
@@ -151,10 +159,13 @@ class GameState():
             return True
         if move.place is not None:
             return self.board.phase == GamePhase.placing and \
-            self.board.has_card(self.next_player, move.place)
+                self.board.has_card(self.next_player, move.place)
                 
         if move.bet is not None:
             return self.board.phase == GamePhase.betting and \
+                move.bet > 0 and \
+                move.bet <= self.board._table.get_total_cards() and \ 
+                move.bet > self.board.top_bet[1]
 
         if move.choice is not None:
             return self.board.phase == GamePhase.choice and \
@@ -162,38 +173,16 @@ class GameState():
                 self.next_player != move.choice and \
                 self.board._table.get_player_cards(move.choice) > 0 
 
-
-assert self._table.get_player_cards(dest_player) > 0
-        assert start_player != dest_player
-#--------------------------------------------------------------------------------------
-    @property
-    def situation(self):
-        return (self.next_player, self.board)
-
-# tag::is_valid_move[]
-    def is_valid_move(self, move):
-        if self.is_over():
-            return False
-        if move.is_pass or move.is_resign:
-            return True
-        return (
-            self.board.get(move.point) is None and
-            not self.is_move_self_capture(self.next_player, move) and
-            not self.does_move_violate_ko(self.next_player, move))
-# end::is_valid_move[]
-
-# tag::is_over[]
     def is_over(self):
         if self.last_move is None:
             return False
-        if self.last_move.is_resign:
+        #
+        if self.last_move.is_choice and self.board.all_cards_chosen():
             return True
-        second_last_move = self.previous_state.last_move
-        if second_last_move is None:
-            return False
-        return self.last_move.is_pass and second_last_move.is_pass
-# end::is_over[]
-
+        if self.last_move.is_choice and self.last_move.choice == : #if the card drawn is black then the game ends add_________________
+            return True
+        return False
+ #below here needs to be redone ----------------------------
     def legal_moves(self):
         moves = []
         for row in range(1, self.board.num_rows + 1):
