@@ -90,7 +90,7 @@ class Board():
         return card
 
     def all_cards_chosen(self):
-        assert self.phase = GamePhase.chooice
+        assert self.phase = GamePhase.choice
         return self.chosen_cards == self.top_bet
 
 
@@ -153,25 +153,33 @@ class GameState():
         return GameState(board, Player.anne, None, None)
 
     def is_valid_move(self,move):
+
         if self.is_over():
             return False
-        if move.is_pass:
+
+        if move.is_pass and self.board.phase == GamePhase.betting:
             return True
+
         if move.place is not None:
             return self.board.phase == GamePhase.placing and \
                 self.board.has_card(self.next_player, move.place)
                 
         if move.bet is not None:
-            return self.board.phase == GamePhase.betting and \
+            return (self.board.phase == GamePhase.betting and \
                 move.bet > 0 and \
                 move.bet <= self.board._table.get_total_cards() and \ 
-                move.bet > self.board.top_bet[1]
+                move.bet > self.board.top_bet[1]) or
+                (self.board.phase == GamePhase.placing and \
+                move.bet > 0 and \
+                move.bet <= self.board._table.get_total_cards() )
 
         if move.choice is not None:
             return self.board.phase == GamePhase.choice and \
                 self.board.top_bet[0] == self.next_player and \
                 self.next_player != move.choice and \
                 self.board._table.get_player_cards(move.choice) > 0 
+        
+        return False
 
     def is_over(self):
         if self.last_move is None:
@@ -182,20 +190,26 @@ class GameState():
         if self.last_move.is_choice and self.last_move.choice == : #if the card drawn is black then the game ends add_________________
             return True
         return False
- #below here needs to be redone ----------------------------
+
     def legal_moves(self):
         moves = []
-        for row in range(1, self.board.num_rows + 1):
-            for col in range(1, self.board.num_cols + 1):
-                move = Move.play(Point(row, col))
-                if self.is_valid_move(move):
-                    moves.append(move)
-        # These two moves are always legal.
-        moves.append(Move.pass_turn())
-        moves.append(Move.resign())
-
+        for card_type in Card:
+            move = Move.place(card_type)
+            if self.is_valid_move(move):
+                moves.append(move)
+        for i in range(self.board._table.get_total_cards()):
+            move = Move.bet(i)
+            if self.is_valid_move(move):
+                moves.append(move)
+        if self.is_valid_move(Move.pass_bet()):
+            moves.append(Move.pass_bet())
+        for user in Player:
+            move = Move.choice(user)
+            if self.is_valid_move(move):
+                moves.append(move)
         return moves
-
+    
+ #below here needs to be redone ----------------------------
     def winner(self):
         if not self.is_over():
             return None
