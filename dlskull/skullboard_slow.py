@@ -3,6 +3,7 @@ import copy
 from dlskull.skulltypes import Player
 from dlskull.skulltypes import GamePhase
 from dlskull.skulltypes import Card
+from dlskull.scoring import compute_game_result
 
 __all__ = [
     'Board',
@@ -208,12 +209,9 @@ class GameState():
             if self.is_valid_move(move):
                 moves.append(move)
         return moves
-    
- #below here needs to be redone ----------------------------
+
     def winner(self):
         if not self.is_over():
             return None
-        if self.last_move.is_resign:
-            return self.next_player
         game_result = compute_game_result(self)
         return game_result
