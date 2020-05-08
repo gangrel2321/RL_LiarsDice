@@ -12,8 +12,7 @@ def clear():
     else: 
         _ = system('clear') 
 
-def betPhase():
-    pass
+#Define gamestate
 
 if __name__ == "__main__":
     #Start Game
