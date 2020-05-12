@@ -18,7 +18,7 @@ class Player(enum.Enum):
             return Player.bill
         elif self == Player.bill:
             return Player.charlie
-        else 
+        else:
             return Player.anne
 
 class GamePhase(enum.Enum):
