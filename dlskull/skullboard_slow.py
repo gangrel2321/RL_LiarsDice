@@ -11,6 +11,9 @@ __all__ = [
     'Move',
 ]
 
+NUM_PLAYERS = 3
+DEBUG_MODE = False
+
 class IllegalMoveError(Exception):
     pass
 
@@ -71,6 +74,7 @@ class Board():
         self.phase = phase
         self._bets = {}
         self.chosen_cards = 0
+        self.last_chosen = None
         self.top_bet = (None,-1)
 
     def get_table(self):
@@ -86,24 +90,31 @@ class Board():
         self._table.add(player, card)
 
     def place_bet(self, player, bet):
-        assert bet > self.top_bet[1]
-        self.phase = GamePhase.betting
-        self._bets[player] = bet
-        self.top_bet = (player, bet)
-        #the maximum value has been bet
-        if bet >= self._table.get_total_cards():
-            self.phase.next
-        #everyone has now bet
-        elif len(self.players_bet) == 3:
-            self.phase.next
+        if self.phase == GamePhase.choice:
+            return
+        assert bet > self.top_bet[1] or bet == -1 #exceed max bet or pass
         assert not player in self.players_bet
         self.players_bet.add(player)
+
+        self.phase = GamePhase.betting
+        self._bets[player] = bet
+        if bet > self.top_bet[1]:
+            self.top_bet = (player, bet)
+        #the maximum value has been bet
+        if bet >= self._table.get_total_cards():
+            self.phase = self.phase.next
+        #everyone has now bet
+        elif len(self.players_bet) == NUM_PLAYERS:
+            self.phase = self.phase.next
+        
+        
 
     def choose_card(self, start_player, dest_player):
         assert self._table.get_player_cards(dest_player) > 0
         assert start_player != dest_player
         card = self._table.remove(dest_player)
         self.chosen_cards += 1
+        self.last_chosen = card
         return card
 
     def all_cards_chosen(self):
@@ -141,7 +152,7 @@ class GameState():
         self.previous_state = previous
         self.last_move = move
 
-    def apply_move(self, move):  # <1>
+    def apply_move(self, move):
         next_board = copy.deepcopy(self.board)
         if move.place:
             next_board.place_card(self.next_player, move.place)
@@ -149,6 +160,8 @@ class GameState():
             next_board.place_bet(self.next_player, move.bet)
         elif move.choice:
             next_board.choose_card(self.next_player, move.choice)
+        elif move.is_pass:
+            next_board.place_bet(self.next_player, -1)
 
         return GameState(next_board, self.next_player.other, self, move)
     
@@ -162,7 +175,7 @@ class GameState():
         if self.is_over():
             return False
 
-        if move.is_pass and self.board.phase == GamePhase.betting:
+        if move.is_pass and self.board.phase != GamePhase.placing:
             return True
 
         if move.place is not None:
@@ -176,6 +189,7 @@ class GameState():
                 move.bet > self.board.top_bet[1]) or \
                 (self.board.phase == GamePhase.placing and \
                 move.bet > 0 and \
+                self.board._table.get_total_cards() >= NUM_PLAYERS and \
                 move.bet <= self.board._table.get_total_cards() )
 
         if move.choice is not None:
@@ -192,8 +206,13 @@ class GameState():
         if self.last_move.is_choice and self.board.all_cards_chosen():
             return True
         #if the card drawn is black then the game ends
+        if DEBUG_MODE and self.last_move.is_choice:
+            print("Testing1:", self.last_move.choice)
+            print("Testing:", self.board.get_table()._chart)
+            print("Chosen cards:", self.board.chosen_cards)
         if self.last_move.is_choice and \
-            self.board.get_table()[self.last_move.choice][-1] == Card.skull: 
+            (self.board.last_chosen == Card.skull or \
+            len(self.board.get_table().get_player(self.last_move.choice)) == 0 ): 
             return True
         return False
 
@@ -205,17 +224,17 @@ class GameState():
             if self.is_valid_move(move):
                 moves.append(move)
         #bet
-        for i in range(self.board._table.get_total_cards()):
+        for i in range(1,self.board._table.get_total_cards() + 1):
             move = Move(bet=i)
             if self.is_valid_move(move):
                 moves.append(move)
-        #pass
-        if self.is_valid_move(Move.pass_bet()):
+        #pass during betting
+        if self.is_valid_move(Move.pass_bet()) and self.board.phase == GamePhase.betting:
             moves.append(Move.pass_bet())
         #choice
         for user in Player:
             move = Move(choice=user)
             if self.is_valid_move(move):
                 moves.append(move)
-        print("test:", len(moves))
+        print("Possible Moves:", len(moves))
         return moves

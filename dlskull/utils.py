@@ -8,6 +8,7 @@ def print_table(player, board):
     print("%s's data:" % player)
     print("Hand: %s" % board.get_hand(player))
     print("Table: %s" % board.get_table())
+    print("Phase: %s" % board.phase)
 
 def print_move(player, move):
     if move.place:
