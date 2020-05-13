@@ -14,21 +14,18 @@ __all__ = [
 NUM_PLAYERS = 3
 DEBUG_MODE = False
 
-class IllegalMoveError(Exception):
-    pass
-
 class Chart():
-    def __init__(self, table=True, default_hand=True):
+    def __init__(self, empty=True, default_hand=True):
         start = []
         if default_hand:
             start = [Card.skull, Card.rose, Card.rose, Card.rose]
-        self.ordered = table
-        if self.ordered:
+        self.is_empty = empty
+        if self.is_empty:
             self._chart = {Player.anne : [], Player.bill: [], Player.charlie : []}
             self.chart_cards = 0
         else:
             self._chart = {Player.anne : start[:], Player.bill: start[:], Player.charlie : start[:]}
-            self.chart_cards = len(start)*len(self._chart)
+            self.chart_cards = sum([len(x) for x in self._chart.values()]) 
 
     #adds a card to "player's" pile
     def add(self, player, card):
@@ -38,11 +35,11 @@ class Chart():
     #removes the top card placed by "player"
     def remove(self, player, value = None):
         if value == None:
-            assert self.ordered == True
+            assert self.is_empty == True
             self.chart_cards -= 1    
             return self._chart[player].pop()
         else:
-            assert self.ordered == False 
+            assert self.is_empty == False 
             self.chart_cards -= 1
             return self._chart[player].remove(value)
 
@@ -58,6 +55,9 @@ class Chart():
     def get_player_cards(self, player):
         return len(self._chart[player])
 
+    def update_chart_cards():
+        self.chart_cards = sum([len(x) for x in self._chart.values()]) 
+
     def __eq__(self, other):
         return isinstance(other, Chart) and \
             self._chart == other._chart and \
@@ -68,14 +68,16 @@ class Chart():
 
 class Board():  
     def __init__(self, phase = GamePhase.placing):
-        self._table = Chart(True)
-        self._hands = Chart(False)
+        self._table = Chart(empty=True)
+        self._hands = Chart(empty=False)
+        self._scores = Chart(empty=True) #list of rounds won
         self.players_bet = set()
         self.phase = phase
         self._bets = {}
         self.chosen_cards = 0
         self.last_chosen = None
         self.top_bet = (None,-1)
+        self.round = 0
 
     def get_table(self):
         return self._table
@@ -107,8 +109,6 @@ class Board():
         elif len(self.players_bet) == NUM_PLAYERS:
             self.phase = self.phase.next
         
-        
-
     def choose_card(self, start_player, dest_player):
         assert self._table.get_player_cards(dest_player) > 0
         assert start_player != dest_player
@@ -121,9 +121,22 @@ class Board():
         assert self.phase == GamePhase.choice
         return self.chosen_cards == self.top_bet
 
-
     def has_card(self, player, card):
         return self._hands.has_card(player, card)
+
+    def round_reset(self,player,win=True):
+        # move table cards back to hands
+        # if loser not none then remove one of their cards
+        self.round += 1
+        for pair in self._table._chart.items()
+            self._hand._chart[pair[0]].extend(pair[1])
+        self._table = Chart(empty=True)
+        if win:
+            self._scores[player].append(self.round-1)
+            return
+        else:
+            old_hand = self._table._chart[player]
+            old_hand.remove(random.choice(old_hand))
 
     def __eq__(self, other):
         return isinstance(other, Board) and \
@@ -172,7 +185,8 @@ class GameState():
 
     def is_valid_move(self,move):
 
-        if self.is_over():
+        if self.is_round_over():
+            self.board.round_reset()
             return False
 
         if move.is_pass and self.board.phase != GamePhase.placing:
@@ -200,7 +214,7 @@ class GameState():
         
         return False
 
-    def is_over(self):
+    def is_round_over(self):
         if self.last_move is None:
             return False
         if self.last_move.is_choice and self.board.all_cards_chosen():
