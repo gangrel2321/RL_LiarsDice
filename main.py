@@ -80,7 +80,7 @@ if __name__ == "__main__":
             clear()
             sleep(2)
         if topBet == curGame.getDownCards():
-                break 
+            break 
         if roundCount > 1 and topPlayer != None:
             print("Player with Highest Bet: %s" % topPlayer.getName())
             print()

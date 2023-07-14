@@ -10,7 +10,8 @@ class Player(enum.Enum):
     anne = 1
     bill = 2
     charlie = 3
-    
+    david = 4
+
     #gets next player
     @property
     def other(self):
