@@ -8,12 +8,12 @@ import time
 
 
 def main():
-    game = skullboard_slow.GameState.new_game()
     bots = {
         skulltypes.Player.anne: agent.naive.RandomBot(),
         skulltypes.Player.bill: agent.naive.RandomBot(),
         skulltypes.Player.charlie: agent.naive.RandomBot()
     }
+    game = skullboard_slow.GameState.new_game()
     while not game.is_over():
         time.sleep(1) 
         #clear_screen() 

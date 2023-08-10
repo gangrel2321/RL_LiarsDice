@@ -5,23 +5,6 @@ __all__ = [
     'Player',
 ]
 
-
-class Player(enum.Enum):
-    anne = 1
-    bill = 2
-    charlie = 3
-    david = 4
-
-    #gets next player
-    @property
-    def other(self):
-        if self == Player.anne:
-            return Player.bill
-        elif self == Player.bill:
-            return Player.charlie
-        else:
-            return Player.anne
-
 class GamePhase(enum.Enum):
     placing = 1
     betting = 2
@@ -40,3 +23,21 @@ class Card(enum.Enum):
     skull = 1
     rose = 2
     
+"""
+class Player(enum.Enum):
+    anne = 1
+    bill = 2
+    charlie = 3
+    david = 4
+
+    #gets next player
+    @property
+    def other(self):
+        if self == Player.anne:
+            return Player.bill
+        elif self == Player.bill:
+            return Player.charlie
+        else:
+            return Player.anne
+
+"""
