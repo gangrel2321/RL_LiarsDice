@@ -1,6 +1,5 @@
 import numpy as np
 import copy
-from dlskull.skulltypes import Player
 from dlskull.skulltypes import GamePhase
 from dlskull.skulltypes import Card
 
@@ -10,7 +9,6 @@ __all__ = [
     'Move',
 ]
 
-NUM_PLAYERS = 3
 DEBUG_MODE = True
 
 class IllegalMoveError(Exception):
@@ -47,6 +45,9 @@ class Chart():
 
     def get_player(self, player):
         return self._chart[player]
+
+    def get_num_players(self):
+        return len(self._chart)
 
     def get_total_cards(self):
         return self.chart_cards
@@ -103,11 +104,9 @@ class Board():
         if bet >= self._table.get_total_cards():
             self.phase = self.phase.next
         #everyone has now bet
-        elif len(self.players_bet) == NUM_PLAYERS:
+        elif len(self.players_bet) == self._table.get_num_players():
             self.phase = self.phase.next
         
-        
-
     def choose_card(self, start_player, dest_player):
         assert self._table.get_player_cards(dest_player) > 0
         assert start_player != dest_player
@@ -145,14 +144,36 @@ class Move():
 
 
 class GameState():
-    def __init__(self, board, players, previous, move):
-        assert len(players) > 0
+    def __init__(self, board, cur_player, previous, move, players=None):
+        assert (type(players) is list or players is None) 
+        assert not (players is None and previous is None)
         self.board = board
-        self.players = players
-        self._cur_player_index = 0
+        if players is None:
+            self.players = previous.players
+        else: 
+            self.players = players
+        assert len(self.players) > 0
+        self._cur_player_index = cur_player
         self.previous_state = previous
         self.last_move = move
 
+    @classmethod
+    def new_game(cls, bots):
+        board = Board(bots)
+        return GameState(board, 0, None, None, bots)
+    
+    def get_cur_player(self):
+        return self.players[self._cur_player_index]
+
+    # get player after self.get_cur_player()
+    def get_next_player(self,use_index=False): # TODO: replace with linked list? 
+        if self._cur_player_index + 1 < len(self.players):
+            index = self._cur_player_index + 1 
+        else:
+            index = 0
+        if use_index:
+            return index
+        return self.players[index]
 
     def apply_move(self, move):
         next_board = copy.deepcopy(self.board)
@@ -165,54 +186,7 @@ class GameState():
         elif move.is_pass:
             next_board.place_bet(self.get_cur_player(), -1)
 
-        return GameState(next_board, self.get_next_player(), self, move)
-    
-    @classmethod
-    def new_game(cls, bots):
-        board = Board(bots)
-        return GameState(board, Player.anne, None, None)
-
-    def get_cur_player(self):
-        return self.players[self._cur_player_index]
-
-    # get player after self.get_cur_player()
-    def get_next_player(self): # TODO: replace with linked list? 
-        if self._cur_player_index < len(self.players):
-            self._cur_player_index += 1
-        else:
-            self._cur_player_index = 0
-        return self.players[self._cur_player_index]    
-
-
-    def is_valid_move(self,move):
-
-        if self.is_over():
-            return False
-
-        if move.is_pass and self.board.phase != GamePhase.placing:
-            return True
-
-        if move.place is not None:
-            return self.board.phase == GamePhase.placing and \
-                self.board.has_card(self.get_cur_player(), move.place)
-                
-        if move.bet is not None:
-            return (self.board.phase == GamePhase.betting and \
-                move.bet > 0 and \
-                move.bet <= self.board._table.get_total_cards() and \
-                move.bet > self.board.top_bet[1]) or \
-                (self.board.phase == GamePhase.placing and \
-                move.bet > 0 and \
-                self.board._table.get_total_cards() >= NUM_PLAYERS and \
-                move.bet <= self.board._table.get_total_cards() )
-
-        if move.choice is not None:
-            return self.board.phase == GamePhase.choice and \
-                self.board.top_bet[0] == self.get_cur_player() and \
-                self.get_cur_player() != move.choice and \
-                self.board._table.get_player_cards(move.choice) > 0 
-        
-        return False
+        return GameState(next_board, self.get_next_player(use_index=True), self, move)
 
     def is_over(self):
         if self.last_move is None:
@@ -222,14 +196,38 @@ class GameState():
             return True
         #if the card drawn is black then the game ends
         if DEBUG_MODE and self.last_move.is_choice:
-            print("Testing1:", self.last_move.choice)
-            print("Testing:", self.board.get_table()._chart)
-            print("Chosen cards:", self.board.chosen_cards)
+            print("Final Move:", self.last_move.choice)
+            print("Final Table:", self.board.get_table()._chart)
+            print("Final Chosen Cards:", self.board.chosen_cards)
         # TODO : Fix this, the game shouldn't end when you draw a skull... 
         if self.last_move.is_choice and \
-            ( (self.board.last_chosen == Card.skull ) ) or \
+            ( (self.board.last_chosen == Card.skull ) or \
             len(self.board.get_table().get_player(self.last_move.choice)) == 0 ): 
             return True
+        return False
+
+    def is_valid_move(self,move):
+        if self.is_over():
+            return False
+        if move.is_pass and self.board.phase != GamePhase.placing:
+            return True
+        if move.place is not None:
+            return self.board.phase == GamePhase.placing and \
+                self.board.has_card(self.get_cur_player(), move.place)               
+        if move.bet is not None:
+            return (self.board.phase == GamePhase.betting and \
+                move.bet > 0 and \
+                move.bet <= self.board._table.get_total_cards() and \
+                move.bet > self.board.top_bet[1]) or \
+                (self.board.phase == GamePhase.placing and \
+                move.bet > 0 and \
+                self.board._table.get_total_cards() >= len(self.players) and \
+                move.bet <= self.board._table.get_total_cards() )
+        if move.choice is not None:
+            return self.board.phase == GamePhase.choice and \
+                self.board.top_bet[0] == self.get_cur_player() and \
+                self.get_cur_player() != move.choice and \
+                self.board._table.get_player_cards(move.choice) > 0      
         return False
 
     def legal_moves(self):
@@ -248,7 +246,7 @@ class GameState():
         if self.is_valid_move(Move.pass_bet()) and self.board.phase == GamePhase.betting:
             moves.append(Move.pass_bet())
         #choice
-        for user in Player:
+        for user in self.players:
             move = Move(choice=user)
             if self.is_valid_move(move):
                 moves.append(move)
